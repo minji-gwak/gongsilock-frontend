@@ -7,7 +7,7 @@ export const SocialLogins = () => {
       <Button className="w-full rounded-full">구글</Button>
       <Button className="w-full rounded-full">카카오</Button>
       <Button className="w-full rounded-full" asChild>
-        <Link href="/register/mail">이메일 회원가입</Link>
+        <Link href="/signup/mail">이메일 회원가입</Link>
       </Button>
     </div>
   );

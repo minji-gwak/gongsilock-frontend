@@ -21,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={cn(pretendard.className, '')}>{children}</body>
+      <body className={cn(pretendard.className, '')}>
+        {children}
+      </body>
     </html>
   );
 }

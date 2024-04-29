@@ -54,7 +54,7 @@ export default function MailForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full h-full flex flex-col ">
         <FormField
           disabled={isSubmitting}
           control={form.control}
@@ -71,9 +71,11 @@ export default function MailForm() {
           )}
         />
 
-        <Button type="submit" className="w-full rounded-full" disabled={isSubmitting}>
-          {isSubmitting ? '제출중...' : '재설정 메일 보내기'}
-        </Button>
+        <div className="flex-1 flex flex-col justify-end">
+          <Button type="submit" className="w-full rounded-full" disabled={isSubmitting}>
+            {isSubmitting ? '제출중...' : '재설정 메일 보내기'}
+          </Button>
+        </div>
 
         {isError && <p>{isError}</p>}
       </form>
