@@ -5,6 +5,7 @@ import fox from '@/static/images/fox.jpg';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { GongsilockLogo } from '@/components/GongsilockLogo/GongsilockLogo';
 
 export default function Page({ searchParams }: { searchParams?: { mail: string } }) {
   if (searchParams === undefined) {
@@ -19,13 +20,7 @@ export default function Page({ searchParams }: { searchParams?: { mail: string }
     // <section className="grid place-items-center">
     <section className="flex flex-col inset-0 py-[4.5rem] px-[1.5rem] gap-8 md:max-w-[48rem] mx-auto h-dvh">
       <Link href="/login">
-        <Image
-          className="h-[3.25rem] md:h-[4.5rem] object-contain mx-auto"
-          src={logo.src}
-          width={339}
-          height={92}
-          alt="Gongsilock Logo"
-        />
+        <GongsilockLogo />
       </Link>
       <div className="flex flex-col gap-6 rounded-lg overflow-hidden items-center h-full">
         <Image className="w-full aspect-[3/1] object-cover" src={fox.src} width={1084} height={720} alt="fox" />

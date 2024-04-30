@@ -94,6 +94,9 @@ const config = {
       fontFamily: {
         sans: ['var(--font-pretendard)'],
       },
+      boxShadow: {
+        dayOfWeek: '0 0 4px rgba(0, 0, 0, .1)',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],

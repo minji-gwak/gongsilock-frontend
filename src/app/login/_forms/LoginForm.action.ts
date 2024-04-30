@@ -11,6 +11,6 @@ export async function loginService(prevState: FormState, data: FormData): Promis
     setTimeout(() => resolve(null), 1500);
   });
 
-  return { status: ActionStatus.Error, issues: ['에러여 에러'] };
-  // return { status: ActionStatus.Success };
+  // return { status: ActionStatus.Error, issues: ['에러여 에러'] };
+  return { status: ActionStatus.Success };
 }

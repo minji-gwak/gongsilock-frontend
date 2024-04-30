@@ -3,11 +3,11 @@ import { notFound } from 'next/navigation';
 import { PropsWithChildren } from 'react';
 
 export default function Layout({ children, params }: PropsWithChildren<{ params: { cid: string } }>) {
-  const { cid } = params;
+  // const { cid } = params;
 
-  if (cid !== '123') {
-    notFound();
-  }
+  // if (cid !== '12321') {
+  //   notFound();
+  // }
 
   return (
     <div>

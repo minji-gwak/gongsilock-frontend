@@ -60,3 +60,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fix font-weight issue in Safari Broswer */
+* {
+  font-synthesis: none !important;
+}

@@ -54,7 +54,7 @@ export default function MailForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full h-full flex flex-col ">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full flex-1 flex flex-col ">
         <FormField
           disabled={isSubmitting}
           control={form.control}

@@ -1,7 +1,6 @@
 import { SignUpForm } from '@/app/signup/_forms/SignUpForm';
-import Image from 'next/image';
+import { GongsilockLogo } from '@/components/GongsilockLogo/GongsilockLogo';
 import Link from 'next/link';
-import logo from '@/static/images/gongsilock-signature-bg-white.jpg';
 
 type PageProps = {
   params: { token: string };
@@ -12,13 +11,7 @@ export default function Page({ params }: PageProps) {
   return (
     <section className="flex flex-col inset-0 py-[4.5rem] px-[1.5rem] gap-8 md:max-w-[48rem] mx-auto h-dvh">
       <Link href="/login">
-        <Image
-          className="h-[3.25rem] md:h-[4.5rem] object-contain mx-auto"
-          src={logo.src}
-          width={339}
-          height={92}
-          alt="Gongsilock Logo"
-        />
+        <GongsilockLogo />
       </Link>
 
       <div className="space-y-2">
