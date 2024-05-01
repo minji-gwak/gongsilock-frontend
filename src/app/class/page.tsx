@@ -1,5 +1,5 @@
 import { GongsilockLogo } from '@/components/GongsilockLogo/GongsilockLogo';
-import { TitleWithDescription } from '@/components/TitleWithDescription/TitleWithDescription';
+import { HeadingWithDescription } from '@/components/HeadingWithDescription/HeadingWithDescription';
 import { CirclePlus, CirclePlusIcon, User } from 'lucide-react';
 import { Suspense } from 'react';
 
@@ -48,7 +48,7 @@ export default function Page() {
   return (
     <section className="py-[4.5rem] px-6 max-w-[48rem] mx-auto space-y-[3rem] md:p-10">
       <GongsilockLogo />
-      <TitleWithDescription title="반 선택" description="참여할 반을 선택해주세요." />
+      <HeadingWithDescription heading="반 선택" description="참여할 반을 선택해주세요." />
 
       <div>
         <h6 className="font-semibold mb-3">반 목록</h6>

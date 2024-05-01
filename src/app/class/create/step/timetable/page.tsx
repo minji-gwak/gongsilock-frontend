@@ -1,5 +1,5 @@
 import { DayOfWeekToggle, DayOfWeekToggleGroup } from '@/components/DayOfWeekToggle/DayOfWeekToggle';
-import { TitleWithDescription } from '@/components/TitleWithDescription/TitleWithDescription';
+import { HeadingWithDescription } from '@/components/HeadingWithDescription/HeadingWithDescription';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BoxSelect, Info } from 'lucide-react';
@@ -12,8 +12,8 @@ export default function Page() {
 
   return (
     <section className="space-y-12">
-      <TitleWithDescription
-        title="시간표 설정"
+      <HeadingWithDescription
+        heading="시간표 설정"
         description="기본적인 시간표를 생성하는 데 필요한 정보를 입력해주세용"
       />
 

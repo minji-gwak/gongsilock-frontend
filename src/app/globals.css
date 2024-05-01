@@ -61,6 +61,12 @@
   }
 }
 
+@layer components {
+  .full-container {
+    @apply flex flex-col py-[4.5rem] px-[1.5rem] gap-8 md:max-w-[48rem] mx-auto min-h-dvh;
+  }
+}
+
 /* Fix font-weight issue in Safari Broswer */
 * {
   font-synthesis: none !important;

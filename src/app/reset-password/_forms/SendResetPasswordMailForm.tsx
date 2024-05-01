@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { ActionStatus } from '@/enums/ActionStatus';
 import { FormState } from '@/types/actions';
@@ -9,37 +9,38 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PropsWithChildren, useRef, useState, useTransition } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { sendSignUpMail } from './SendSignUpMailForm.action';
+import { sendResetPasswordMail } from './SendResetPasswordMailForm.action';
 
 const formSchema = z.object({
   email: z.string().email('이메일 형식을 따라주셈'),
 });
 
-export type SendSignUpMailRequest = z.infer<typeof formSchema>;
+export type SendResetPasswordMailRequest = z.infer<typeof formSchema>;
 
-const initialValues: SendSignUpMailRequest = {
+const initialValues: SendResetPasswordMailRequest = {
   email: '',
 };
 
-type SendSignUpMailFormProp = {
+type SendResetPasswordMailFormProps = {
   onSuccess: (email: string) => void;
 };
 
-export function SendSignUpMailForm({ onSuccess }: SendSignUpMailFormProp) {
+export default function SendResetPasswordMailForm({ onSuccess }: SendResetPasswordMailFormProps) {
   const [isPending, startTransition] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
 
   const [state, setState] = useState<FormState>({
     status: ActionStatus.Idle,
     fields: { ...initialValues },
   });
 
-  const form = useForm<SendSignUpMailRequest>({
+  const form = useForm<SendResetPasswordMailRequest>({
     resolver: zodResolver(formSchema),
     defaultValues: { ...state.fields },
   });
 
-  const submitText = isPending ? '전송 중...' : '회원가입 메일 보내기';
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const submitText = isPending ? '메일 보내는 중...' : '비밀번호 재설정 메일 보내기';
   const hasError = state.status === ActionStatus.Error;
 
   const handleSubmitAfterValidation = () => {
@@ -52,15 +53,15 @@ export function SendSignUpMailForm({ onSuccess }: SendSignUpMailFormProp) {
     setState({
       status: ActionStatus.Idle,
       fields: { ...(Object.fromEntries(formData) as Record<string, string>) },
-    } as FormState);
+    });
 
     startTransition(() => {
-      requestSendSignUpMail(formData);
+      requestSendMail(formData);
     });
   };
 
-  const requestSendSignUpMail = async (formData: FormData) => {
-    const result = await sendSignUpMail(state, formData);
+  const requestSendMail = async (formData: FormData) => {
+    const result = await sendResetPasswordMail(state, formData);
 
     if (result.status === ActionStatus.Success) {
       return onSuccess(result.fields?.email);
@@ -71,18 +72,19 @@ export function SendSignUpMailForm({ onSuccess }: SendSignUpMailFormProp) {
 
   return (
     <Form {...form}>
-      <form className="w-full flex-1 flex" ref={formRef} onSubmit={form.handleSubmit(handleSubmitAfterValidation)}>
+      <form ref={formRef} onSubmit={form.handleSubmit(handleSubmitAfterValidation)} className="w-full flex-1 flex">
         <fieldset className="flex-1 flex flex-col border-none space-y-2 md:space-y-6" disabled={isPending}>
           <EmailField control={form.control} />
-          {hasError && <p>{state.issues[0]}</p>}
           <SubmitButton>{submitText}</SubmitButton>
         </fieldset>
+
+        {hasError && <p>{state.issues[0]}</p>}
       </form>
     </Form>
   );
 }
 
-const EmailField = ({ control }: { control: Control<SendSignUpMailRequest, any> }) => {
+const EmailField = ({ control }: { control: Control<SendResetPasswordMailRequest, any> }) => {
   return (
     <FormField
       control={control}
@@ -93,6 +95,7 @@ const EmailField = ({ control }: { control: Control<SendSignUpMailRequest, any> 
           <FormControl>
             <Input placeholder="example@example.com" type="email" {...field} />
           </FormControl>
+          <FormDescription>가입했을 당시의 이메일을 입력해주세요.</FormDescription>
           <FormMessage />
         </FormItem>
       )}

@@ -1,4 +1,4 @@
-import { TitleWithDescription } from '@/components/TitleWithDescription/TitleWithDescription';
+import { HeadingWithDescription } from '@/components/HeadingWithDescription/HeadingWithDescription';
 
 import fox from '@/static/images/fox.jpg';
 import { TemplateData, TemplateList } from './TemplateList';
@@ -27,7 +27,7 @@ const templateDataList: TemplateData[] = [
 export default function Page() {
   return (
     <section className="space-y-12">
-      <TitleWithDescription title="기본 템플릿 선택" description="미리 정의된 시간표로 더 편하게 생성해보세요." />
+      <HeadingWithDescription heading="기본 템플릿 선택" description="미리 정의된 시간표로 더 편하게 생성해보세요." />
 
       <div>
         <h4 className="font-bold mb-3">템플릿 목록</h4>

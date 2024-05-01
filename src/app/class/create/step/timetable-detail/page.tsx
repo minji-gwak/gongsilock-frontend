@@ -1,5 +1,5 @@
 import { DayOfWeekToggle, DayOfWeekToggleGroup } from '@/components/DayOfWeekToggle/DayOfWeekToggle';
-import { TitleWithDescription } from '@/components/TitleWithDescription/TitleWithDescription';
+import { HeadingWithDescription } from '@/components/HeadingWithDescription/HeadingWithDescription';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Clock, Info, UserRoundCheck } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Clock, Info, UserRoundCheck } from 'lucide-react';
 export default function Page() {
   return (
     <section className="space-y-12 text-green-900">
-      <TitleWithDescription title="세부 설정" description="각 교시마다 세부적인 설정을 바꿀 수 있어요." />
+      <HeadingWithDescription heading="세부 설정" description="각 교시마다 세부적인 설정을 바꿀 수 있어요." />
 
       <div className="space-y-2">
         <p className="font-semibold text-lg">요일</p>

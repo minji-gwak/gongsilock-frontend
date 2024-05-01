@@ -23,12 +23,12 @@ const formSchema = z.object({
     }),
 });
 
-const initialValues = {
+export type LoginRequest = z.infer<typeof formSchema>;
+
+const initialValues: LoginRequest = {
   email: '',
   password: '',
 };
-
-export type LoginRequest = z.infer<typeof formSchema>;
 
 type LoginFormProps = {
   onSuccess: () => void;
@@ -84,18 +84,18 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
     });
 
     startTransition(() => {
-      requestLoginForm(formData);
+      requestLogin(formData);
     });
   };
 
-  const requestLoginForm = async (formData: FormData) => {
+  const requestLogin = async (formData: FormData) => {
     const result = await loginService(state, formData);
 
     if (result.status === ActionStatus.Success) {
       onSuccess();
+    } else {
+      setState(result);
     }
-
-    setState(result);
   };
 
   return (
