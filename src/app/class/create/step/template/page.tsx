@@ -1,7 +1,7 @@
 import { HeadingWithDescription } from '@/components/HeadingWithDescription/HeadingWithDescription';
-
 import fox from '@/static/images/fox.jpg';
-import { TemplateData, TemplateList } from './TemplateList';
+import TemplateForm, { TemplateData } from '../_forms/TemplateForm';
+import { redirect } from 'next/navigation';
 
 const templateDataList: TemplateData[] = [
   {
@@ -25,20 +25,16 @@ const templateDataList: TemplateData[] = [
 ];
 
 export default function Page() {
+  const handleSuccess = async () => {
+    'use server';
+
+    redirect('/class/create/step/timetable');
+  };
+
   return (
-    <section className="space-y-12">
+    <section className="flex flex-col flex-1 space-y-6">
       <HeadingWithDescription heading="기본 템플릿 선택" description="미리 정의된 시간표로 더 편하게 생성해보세요." />
-
-      <div>
-        <h4 className="font-bold mb-3">템플릿 목록</h4>
-        <TemplateList list={templateDataList} />
-      </div>
-
-      <a
-        className="w-full py-3 rounded-full bg-green-500 block text-center font-semibold text-white"
-        href="/class/create/step/timetable">
-        다음
-      </a>
+      <TemplateForm list={templateDataList} onSuccess={handleSuccess} />
     </section>
   );
 }

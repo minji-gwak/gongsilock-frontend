@@ -8,7 +8,7 @@ export default function Layout({
   children: React.ReactNode;
 }>) {
   return (
-    <section className="w-full max-w-[48rem] mx-auto py-[4.5rem] space-y-[3rem] px-6 min-h-dvh flex flex-col">
+    <section className="full-container">
       <GongsilockLogo />
 
       {/**
