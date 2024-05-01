@@ -1,6 +1,7 @@
 import { GongsilockLogo } from '@/components/GongsilockLogo/GongsilockLogo';
 import { HeadingWithDescription } from '@/components/HeadingWithDescription/HeadingWithDescription';
 import { CirclePlus, CirclePlusIcon, User } from 'lucide-react';
+import Link from 'next/link';
 import { Suspense } from 'react';
 
 // TODO: API 명세에 맞게 types/models 생성
@@ -69,7 +70,9 @@ const ClassList = async () => {
   return (
     <ul className="flex flex-col gap-3">
       {classListData.map((classItemData) => (
-        <ClassItemPresenter key={classItemData.id} {...classItemData} />
+        <Link key={classItemData.id} href={`/class/${classItemData.id}/dashboard`}>
+          <ClassItemPresenter {...classItemData} />
+        </Link>
       ))}
       <CreateNewClassButton />
     </ul>
