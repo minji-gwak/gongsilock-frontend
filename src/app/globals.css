@@ -2,8 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --background: 0, 0%, 98%;
+    /* --background: 71 100% 95%; */
+    --foreground: 70, 26%, 22%;
+    /* --foreground: 71 5% 0%; */
+    --card: 71 50% 90%;
+    --card-foreground: 71 5% 10%;
+    --popover: 71 100% 95%;
+    --popover-foreground: 71 100% 0%;
+    --primary: 71 29.2% 52.9%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 71 30% 70%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 33 30% 85%;
+    --muted-foreground: 71 5% 35%;
+    --accent: 33 30% 80%;
+    --accent-foreground: 71 5% 10%;
+    --destructive: 0 100% 30%;
+    --destructive-foreground: 71 5% 90%;
+    --border: 71 30% 50%;
+    --input: 71 30% 18%;
+    --ring: 71 29.2% 52.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 71 50% 5%;
+    --foreground: 71 5% 90%;
+    --card: 71 50% 0%;
+    --card-foreground: 71 5% 90%;
+    --popover: 71 50% 5%;
+    --popover-foreground: 71 5% 90%;
+    --primary: 71 29.2% 52.9%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 71 30% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 33 30% 15%;
+    --muted-foreground: 71 5% 60%;
+    --accent: 33 30% 15%;
+    --accent-foreground: 71 5% 90%;
+    --destructive: 0 100% 30%;
+    --destructive-foreground: 71 5% 90%;
+    --border: 71 30% 18%;
+    --input: 71 30% 18%;
+    --ring: 71 29.2% 52.9%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .full-container {
+    @apply flex flex-col py-[4.5rem] px-[1.5rem] gap-8 md:max-w-[48rem] mx-auto min-h-dvh;
+  }
+}
+
+/* Fix font-weight issue in Safari Broswer */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  font-synthesis: none !important;
 }
