@@ -13,6 +13,11 @@ const config = {
       },
     },
     extend: {
+      screens: {
+        fullscreen: { raw: '(display-mode: fullscreen)' },
+        touchdevice: { raw: '(pointer: coarse)' },
+        pointerdevice: { raw: '(pointer: fine)' },
+      },
       colors: {
         grey: {
           50: '#efefef',
@@ -96,6 +101,7 @@ const config = {
       },
       boxShadow: {
         dayOfWeek: '0 0 4px rgba(0, 0, 0, .1)',
+        focusBtn: '0 0 12px rgba(111, 121, 71, .1)',
       },
     },
   },
