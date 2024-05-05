@@ -5,6 +5,7 @@ export type Period = {
   name: string;
   startTime: Date;
   duration: number;
+  isAttendacneRequired: boolean;
 };
 
 export enum PeriodStatus {

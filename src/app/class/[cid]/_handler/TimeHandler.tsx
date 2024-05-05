@@ -25,7 +25,7 @@ export const TimeHandler = ({ serverTime }: { serverTime: Date }) => {
 
     const timerEvent: TimerEvent = {
       action: TimerEventAction.START_TIMER,
-      payload: { interval: 1000 },
+      payload: { interval: 10 },
     };
 
     timerWorker.postMessage(timerEvent);

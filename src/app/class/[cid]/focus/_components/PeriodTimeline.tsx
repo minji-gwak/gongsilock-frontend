@@ -93,7 +93,13 @@ const getStartAndEndTime = ({
   let endTime: Date = new Date();
 
   if (isBeforeFirstClass) {
-    startTime = subMinutes(currentTime, getMinutes(currentTime));
+    /**
+     * NOTE: 시작 전에 들어오면 해당 시부터 시작하게 해주려고 했는데(ex. 8시 45분 -> 8시)
+     * 만약 7시 10분에 시작하면, startTime이 7시, 8시로 각각 바뀌게 된다.
+     * 시작한 시간으로부터 starttime을 고정되게 하려면, connectedTime.. 따위로 최초로 접속한 시각을 저장해야 하는데
+     * 그러는 게 낫나 아니면 새벽 5시로 가는 게 낫나 모르겠네 */
+    startTime = setHours(setMinutes(setSeconds(currentTime, 0), 0), 5);
+    // startTime = subMinutes(currentTime, getMinutes(currentTime));
     endTime = periods[0].startTime;
   }
 
