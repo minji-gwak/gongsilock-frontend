@@ -71,3 +71,7 @@
 * {
   font-synthesis: none !important;
 }
+
+html {
+  overflow-x: hidden;
+}

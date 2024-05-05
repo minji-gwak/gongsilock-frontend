@@ -18,7 +18,7 @@ export const DayOfWeekToggle = ({ value, onToggle, isActive }: DayOfWeekTogglePr
         ['border-green-600 bg-green-50 shadow-dayOfWeek font-medium']: isActive,
         ['border-gray-200 text-green-900']: !isActive,
       })}
-      onClick={() => onToggle(value)}>
+      onClick={() => onToggle && onToggle(value)}>
       {dayOfWeeks[value]}
     </button>
   );
