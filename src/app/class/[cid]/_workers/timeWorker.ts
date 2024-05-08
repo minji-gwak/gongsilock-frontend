@@ -20,10 +20,7 @@ let _timerId: NodeJS.Timeout | null = null;
 
 typeof self === 'object' &&
   self.addEventListener('message', (event: MessageEvent<TimerEvent>) => {
-    console.log('너 왜 일 안 해...');
     const { data: timerEvent } = event;
-
-    console.log(timerEvent.action, TimerEventAction.START_TIMER);
 
     const wouldStartTimer = timerEvent.action === TimerEventAction.START_TIMER;
 

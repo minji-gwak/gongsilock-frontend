@@ -1,12 +1,13 @@
 import { addMinutes, addSeconds } from 'date-fns';
 import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
 
 export enum CurrentTimeStatus {
   NOT_SET,
   SET_WITH_SERVER_TIME,
 }
 
-type UseCurrentTimeReturn =
+type CurrentTimeStoreReturn =
   | {
       status: CurrentTimeStatus.NOT_SET;
       currentTime: null;
@@ -20,7 +21,7 @@ type UseCurrentTimeReturn =
       tick: () => void;
     };
 
-export const useCurrentTime = create<UseCurrentTimeReturn>((set) => ({
+export const CurrentTimeStore = create<CurrentTimeStoreReturn>((set) => ({
   status: CurrentTimeStatus.NOT_SET,
   currentTime: null,
   initializeTime: (serverTime: Date) =>
@@ -28,5 +29,8 @@ export const useCurrentTime = create<UseCurrentTimeReturn>((set) => ({
       status: CurrentTimeStatus.SET_WITH_SERVER_TIME,
       currentTime: serverTime,
     }),
-  tick: () => set(({ currentTime: prevTime }) => ({ currentTime: addMinutes(prevTime!, 1) })),
+  tick: () => set(({ currentTime: prevTime }) => ({ currentTime: addSeconds(prevTime!, 1) })),
+  // tick: () => set(({ currentTime: prevTime }) => ({ currentTime: addMinutes(prevTime!, 1) })),
 }));
+
+export const useCurrentTime = CurrentTimeStore;

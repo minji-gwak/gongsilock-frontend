@@ -1,8 +1,8 @@
 'use client';
 
 import { Pause, Play } from 'lucide-react';
-import { FocusStatus, useFocusAction } from '../../_store/useFocusAction';
 import { cn } from '@/lib/utils';
+import { FocusStatus, useFocusTime } from '../../_store/FocusTimeStore';
 
 const getDurationLabel = (duration: number) => {
   const hours = Math.floor(duration / 3600);
@@ -17,7 +17,7 @@ const getDurationLabel = (duration: number) => {
 };
 
 export const FocusButton = () => {
-  const { status: focusStatus, duration, startFocuing, stopFocusing } = useFocusAction();
+  const { status: focusStatus, duration, startFocuing, stopFocusing } = useFocusTime();
 
   const isFocusing = focusStatus === FocusStatus.FOCUSING;
   const isNotFocusing = focusStatus === FocusStatus.NOT_FOCUSING;

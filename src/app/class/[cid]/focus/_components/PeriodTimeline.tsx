@@ -14,8 +14,9 @@ import {
 } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useEffect, useRef, useState } from 'react';
-import { CurrentTimeStatus, useCurrentTime } from '../../_store/useCurrentTime';
-import { Period, PeriodStatus, usePeriods } from '../../_store/usePeriods';
+import { CurrentTimeStatus, useCurrentTime } from '../../_store/CurrentTimeStore';
+import { Period, PeriodStatus, usePeriods } from '../../_store/PeriodsStore';
+import { TimetableStoreStatus, useTimetable } from '../../_store/TimetableStore';
 
 /**
  * Note: PeriodTimeline은 현재 교시에 따라 타임라인을 보여줍니다.
@@ -74,6 +75,8 @@ const getNextDayAtFiveAM = (date: Date) => {
   return nextDay;
 };
 
+const getResetTime = (date: Date) => setSeconds(setMinutes(setHours(date, 5), 0), 0);
+
 const getStartAndEndTime = ({
   periods,
   currentPeriod,
@@ -93,7 +96,8 @@ const getStartAndEndTime = ({
   let endTime: Date = new Date();
 
   if (isBeforeFirstClass) {
-    startTime = subMinutes(currentTime, getMinutes(currentTime));
+    startTime = getResetTime(currentTime);
+    // startTime = subMinutes(currentTime, getMinutes(currentTime));
     endTime = periods[0].startTime;
   }
 
@@ -114,16 +118,23 @@ const getStartAndEndTime = ({
 
 export const PeriodTimeline = () => {
   const { status: currentTimeStatus } = useCurrentTime();
+  const { status: timetableStatus } = useTimetable();
+  const { status: periodsStatus } = usePeriods();
 
   const hasNoCurrentTime = currentTimeStatus === CurrentTimeStatus.NOT_SET;
+  const hasNoTimetable = timetableStatus === TimetableStoreStatus.NOT_INITIALIZED;
+  const hasNoPeriods = periodsStatus === PeriodStatus.NOT_PERIODS_SET;
 
-  if (hasNoCurrentTime) {
+  const isLoading = hasNoCurrentTime || hasNoTimetable || hasNoPeriods;
+
+  if (isLoading) {
     return (
       <div className="flex-1">
         <PeriodTimelineLoading />
       </div>
     );
   }
+
   return <AwaitedPeriodTimeline />;
 };
 
@@ -137,6 +148,10 @@ const AwaitedPeriodTimeline = () => {
 
   if (currentTimeStatus === CurrentTimeStatus.NOT_SET) {
     throw new Error("currentTimeStatus shouldn't be 'NOT_SET' at this point");
+  }
+
+  if (periodStatus === PeriodStatus.NOT_PERIODS_SET) {
+    throw new Error("periodStatus shouldn't be 'NOT_SET' at this point");
   }
 
   const { startTime, endTime } = getStartAndEndTime({

@@ -1,34 +1,13 @@
+import { format, getHours, subDays } from 'date-fns';
 import { ChevronDown, School, Settings } from 'lucide-react';
 import { PropsWithChildren } from 'react';
+import { getServerTime, getTimetable } from './_actions/actions';
 import { NavigationTabs } from './_components/NavigationTabs';
-import { TimeHandler } from './_handler/TimeHandler';
 import { PeriodHandler } from './_handler/PeriodHandler';
-
-const requestEchoAPI = <T,>(result: T) => {
-  return new Promise<T>((resolve) => {
-    const timerId = setTimeout(() => {
-      resolve(result);
-      clearTimeout(timerId);
-    }, 1500);
-  });
-};
-
-const _timetable = [
-  { id: 0, name: '오전1', startTime: new Date('2024-05-04 13:00:00'), duration: 50, isAttendacneRequired: false },
-  { id: 1, name: '쉬는 시간', startTime: new Date('2024-05-04 13:50:00'), duration: 10, isAttendacneRequired: false },
-  { id: 2, name: '오전2', startTime: new Date('2024-05-04 14:00:00'), duration: 50, isAttendacneRequired: false },
-  { id: 3, name: '쉬는 시간', startTime: new Date('2024-05-04 14:50:00'), duration: 10, isAttendacneRequired: false },
-];
+import { TimeHandler } from './_handler/TimeHandler';
+import { TimetableHandler } from './_handler/TimetableHandler';
 
 export default async function Layout({ children, params }: PropsWithChildren<{ params: { cid: string } }>) {
-  // const { cid } = params;
-
-  // if (cid !== '12321') {
-  //   notFound();
-  // }
-  const getServerTime = async () => requestEchoAPI(new Date('2024-05-04 12:45:00'));
-  const getTimetable = async () => requestEchoAPI(_timetable);
-
   const serverTime = await getServerTime();
   const timetable = await getTimetable();
 
@@ -63,7 +42,8 @@ export default async function Layout({ children, params }: PropsWithChildren<{ p
       </section>
 
       <TimeHandler serverTime={serverTime} />
-      <PeriodHandler timetable={timetable} />
+      <TimetableHandler initialTimetable={timetable} />
+      <PeriodHandler />
     </>
   );
 }
