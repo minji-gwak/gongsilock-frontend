@@ -14,8 +14,9 @@ import {
 } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useEffect, useRef, useState } from 'react';
-import { CurrentTimeStatus, useCurrentTime } from '../../_store/useCurrentTime';
-import { Period, PeriodStatus, usePeriods } from '../../_store/usePeriods';
+import { CurrentTimeStatus, useCurrentTime } from '../../_store/CurrentTimeStore';
+import { Period, PeriodStatus, usePeriods } from '../../_store/PeriodsStore';
+import { TimetableStoreStatus, useTimetable } from '../../_store/TimetableStore';
 
 /**
  * Note: PeriodTimeline은 현재 교시에 따라 타임라인을 보여줍니다.
@@ -74,6 +75,8 @@ const getNextDayAtFiveAM = (date: Date) => {
   return nextDay;
 };
 
+const getResetTime = (date: Date) => setSeconds(setMinutes(setHours(date, 5), 0), 0);
+
 const getStartAndEndTime = ({
   periods,
   currentPeriod,
@@ -93,12 +96,7 @@ const getStartAndEndTime = ({
   let endTime: Date = new Date();
 
   if (isBeforeFirstClass) {
-    /**
-     * NOTE: 시작 전에 들어오면 해당 시부터 시작하게 해주려고 했는데(ex. 8시 45분 -> 8시)
-     * 만약 7시 10분에 시작하면, startTime이 7시, 8시로 각각 바뀌게 된다.
-     * 시작한 시간으로부터 starttime을 고정되게 하려면, connectedTime.. 따위로 최초로 접속한 시각을 저장해야 하는데
-     * 그러는 게 낫나 아니면 새벽 5시로 가는 게 낫나 모르겠네 */
-    startTime = setHours(setMinutes(setSeconds(currentTime, 0), 0), 5);
+    startTime = getResetTime(currentTime);
     // startTime = subMinutes(currentTime, getMinutes(currentTime));
     endTime = periods[0].startTime;
   }
@@ -120,16 +118,23 @@ const getStartAndEndTime = ({
 
 export const PeriodTimeline = () => {
   const { status: currentTimeStatus } = useCurrentTime();
+  const { status: timetableStatus } = useTimetable();
+  const { status: periodsStatus } = usePeriods();
 
   const hasNoCurrentTime = currentTimeStatus === CurrentTimeStatus.NOT_SET;
+  const hasNoTimetable = timetableStatus === TimetableStoreStatus.NOT_INITIALIZED;
+  const hasNoPeriods = periodsStatus === PeriodStatus.NOT_PERIODS_SET;
 
-  if (hasNoCurrentTime) {
+  const isLoading = hasNoCurrentTime || hasNoTimetable || hasNoPeriods;
+
+  if (isLoading) {
     return (
       <div className="flex-1">
         <PeriodTimelineLoading />
       </div>
     );
   }
+
   return <AwaitedPeriodTimeline />;
 };
 
@@ -143,6 +148,10 @@ const AwaitedPeriodTimeline = () => {
 
   if (currentTimeStatus === CurrentTimeStatus.NOT_SET) {
     throw new Error("currentTimeStatus shouldn't be 'NOT_SET' at this point");
+  }
+
+  if (periodStatus === PeriodStatus.NOT_PERIODS_SET) {
+    throw new Error("periodStatus shouldn't be 'NOT_SET' at this point");
   }
 
   const { startTime, endTime } = getStartAndEndTime({

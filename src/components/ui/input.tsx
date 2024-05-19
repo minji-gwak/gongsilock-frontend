@@ -1,25 +1,29 @@
-import * as React from "react"
+import * as React from 'react';
 
-import { cn } from "@/lib/utils"
+import { KeyRoundIcon, Mail } from 'lucide-react';
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  iconType?: 'email' | 'password';
+}
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
-    return (
+const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, ...props }, ref) => {
+  const isMailIcon = props.iconType === 'email';
+  const isPasswordIcon = props.iconType === 'password';
+
+  return (
+    <div className="group flex flex-row gap-2 items-center w-full py-3 px-5 rounded-full border border-gray-400 focus-within:border-green-400 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+      {isMailIcon && <Mail className="size-4 text-gray-400 group-focus-within:text-green-600" />}
+      {isPasswordIcon && <KeyRoundIcon className="size-4 text-gray-400 group-focus-within:text-green-600" />}
       <input
         type={type}
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
+        className="flex-1 bg-transparent outline-none text-green-900  disabled:cursor-not-allowed disabled:opacity-50"
+        placeholder="example@example.com"
         ref={ref}
         {...props}
       />
-    )
-  }
-)
-Input.displayName = "Input"
+    </div>
+  );
+});
+Input.displayName = 'Input';
 
-export { Input }
+export { Input };

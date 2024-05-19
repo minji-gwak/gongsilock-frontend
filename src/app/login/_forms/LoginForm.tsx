@@ -3,16 +3,15 @@
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ActionStatus } from '@/enums/ActionStatus';
-import { FormState } from '@/types/actions';
+import { ErrorObject } from '@/types/api';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRef, useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { loginService } from './LoginForm.action';
 
 const formSchema = z.object({
-  email: z.string().email('이메일 형식이어야 합니다.'),
+  email: z.string().email('이메일 형식을 따라주셈'),
   password: z
     .string()
     .min(2, {
@@ -31,86 +30,58 @@ const initialValues: LoginRequest = {
 };
 
 type LoginFormProps = {
-  onSuccess: () => void;
+  onSuccess: () => Promise<void>;
 };
 
 export const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  /**
-   * useFormState를 사용해서 Progressive Enhencement를 구현하고 싶었고,
-   * 폼이 제출되는 동안은 UI Block을 하고 싶었음.
-   *
-   * 그러기 위해선 폼 제출 상태를 알아야 했는데,
-   * useForm에서 나오는 formState는 Server Action과 Sync로 동작하지 않음.
-   *
-   * 대안으로 startTransition()을 동해 Pending 상태를 나타내고자 했는데,
-   * startTransition()의 callback은 async 여야 작동하는 듯.
-   *
-   * 하지만 useFormState에서 나오는 formAction은 async가 아니라,
-   * 제출 후 isPending이 true로 변하긴 하지만 응답이 왔음에도 false로 돌아가지 않음
-   *
-   * 그래서 .. startTransition() 안에서 loginService() 를 직접 호출하는 식으로 가고,
-   * form에 대한 state는 따로 관리하는 방식으로 일단 진행.
-   *
-   * Ref: https://github.com/orgs/react-hook-form/discussions/10757
-   * Ref2: https://zenn.dev/tsuboi/articles/0fc94356667284#useformstate-%E3%81%A8-useformstatus-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6
-   */
-  const [isPending, startTransition] = useTransition();
+  // 폼 제출 Pending
+  const [isPending, setIsPending] = useState(false);
 
-  const [state, setState] = useState<FormState>({
-    status: ActionStatus.Idle,
-    fields: { ...initialValues },
-  });
+  // Server Validation 관련
+  const [errorState, setErrorState] = useState<ErrorObject | null>(null);
 
+  // Client Validation 관련
   const form = useForm<LoginRequest>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...state.fields },
+    defaultValues: { ...initialValues },
   });
 
-  const formRef = useRef<HTMLFormElement>(null);
+  const submitText = isPending ? '로그인 중...' : '로그인';
+  const hasError = errorState !== null;
 
-  const submitText = isPending ? '로그인 중...' : '로그인 하기';
-  const hasError = state.status === ActionStatus.Error;
-
-  const handleSubmitAfterValidation = () => {
-    if (formRef.current === null) {
-      throw new Error('formRef가 없음');
-    }
-
-    const formData = new FormData(formRef.current);
-
-    setState({
-      status: ActionStatus.Idle,
-      fields: { ...(Object.fromEntries(formData) as Record<string, string>) },
-    });
-
-    startTransition(() => {
-      requestLogin(formData);
-    });
+  const handleSubmitAfterValidation = async (loginValues: LoginRequest) => {
+    await requestLogin(loginValues);
   };
 
-  const requestLogin = async (formData: FormData) => {
-    const result = await loginService(state, formData);
+  const requestLogin = async (loginValues: LoginRequest) => {
+    setErrorState(null);
+    setIsPending(true);
 
-    if (result.status === ActionStatus.Success) {
-      onSuccess();
-    } else {
-      setState(result);
+    const { status, payload } = await loginService(loginValues);
+
+    if (status === 500) {
+      setErrorState(payload);
+      setIsPending(false);
     }
+
+    return onSuccess();
   };
 
   return (
     <Form {...form}>
-      <form className="w-full" ref={formRef} onSubmit={form.handleSubmit(handleSubmitAfterValidation)}>
+      <form className="w-full" onSubmit={form.handleSubmit(handleSubmitAfterValidation)}>
         <fieldset className="border-none space-y-2 w-full md:space-y-6" disabled={isPending}>
           <EmailField control={form.control} />
           <PasswordField control={form.control} />
 
-          <Button className="w-full rounded-full py-4" type="submit">
+          <Button
+            className="w-full rounded-full py-4 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+            type="submit">
             {submitText}
           </Button>
         </fieldset>
 
-        {hasError && <p>{state.issues[0]}</p>}
+        {hasError && <p>{errorState.errorMessage}</p>}
       </form>
     </Form>
   );
@@ -125,7 +96,7 @@ const EmailField = ({ control }: { control: Control<LoginRequest, any> }) => {
         <FormItem>
           <FormLabel className="hidden md:block">이메일</FormLabel>
           <FormControl>
-            <Input placeholder="example@example.com" type="email" {...field} />
+            <Input placeholder="example@example.com" type="email" iconType="email" {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -143,7 +114,7 @@ const PasswordField = ({ control }: { control: Control<LoginRequest, any> }) => 
         <FormItem>
           <FormLabel className="hidden md:block">비밀번호</FormLabel>
           <FormControl>
-            <Input placeholder="2글자 이상, 15글지 이하, 특문포함" type="password" {...field} />
+            <Input placeholder="2글자 이상, 15글지 이하, 특문포함" type="password" iconType="password" {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>

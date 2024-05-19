@@ -1,52 +1,57 @@
 'use client';
 
+import { addMinutes } from 'date-fns';
 import { useEffect } from 'react';
-import { CurrentTimeStatus, useCurrentTime } from '../_store/useCurrentTime';
-import { Period, PeriodStatus, usePeriods } from '../_store/usePeriods';
-import {
-  addDays,
-  addMinutes,
-  isSameDay,
-  isSameHour,
-  isSameMinute,
-  setHours,
-  setMilliseconds,
-  setMinutes,
-  setSeconds,
-} from 'date-fns';
-import { useFocusAction } from '../_store/useFocusAction';
+import { CurrentTimeStatus, useCurrentTime } from '../_store/CurrentTimeStore';
+import { Period, PeriodStatus, usePeriods } from '../_store/PeriodsStore';
+import { TimetableStoreStatus, useTimetable } from '../_store/TimetableStore';
+import { useFocusTime } from '../_store/FocusTimeStore';
 
-export const PeriodHandler = ({ initialPeriods }: { initialPeriods: Period[] }) => {
+export const PeriodHandler = () => {
   const { status: currentTimeStatus, currentTime } = useCurrentTime();
-  const { periods, updatePeriod, setPeriods } = usePeriods();
-  const { resetDuration } = useFocusAction();
+  const { status: timetableStatus, timetable } = useTimetable();
+  const { status: periodsStatus, periods, updatePeriod, initializePeriodsStore } = usePeriods();
+  const { resetDuration } = useFocusTime();
 
   useEffect(() => {
-    setPeriods(initialPeriods);
-  }, [initialPeriods]);
+    if (timetableStatus === TimetableStoreStatus.NOT_INITIALIZED) {
+      return;
+    }
+
+    if (currentTimeStatus === CurrentTimeStatus.NOT_SET) {
+      throw new Error("currentTimeStatus should be 'SET_WITH_SERVER_TIME' but it's 'NOT_SET'");
+    }
+
+    const result = getCurrentPeriod(timetable.periods, currentTime);
+
+    const isBeforeFirstPeriod = result === PeriodStatus.BEFORE_FIRST_PERIOD;
+    const isAfterLastPeriod = result === PeriodStatus.AFTER_LAST_PERIOD;
+    const isInPeriod = !(isBeforeFirstPeriod || isAfterLastPeriod);
+
+    if (isBeforeFirstPeriod) {
+      initializePeriodsStore(timetable.periods, PeriodStatus.BEFORE_FIRST_PERIOD, null);
+    }
+
+    if (isAfterLastPeriod) {
+      initializePeriodsStore(timetable.periods, PeriodStatus.AFTER_LAST_PERIOD, null);
+    }
+
+    if (isInPeriod) {
+      initializePeriodsStore(timetable.periods, PeriodStatus.IN_PERIOD, result);
+    }
+  }, [timetable]);
 
   useEffect(() => {
     if (currentTimeStatus === CurrentTimeStatus.NOT_SET) {
       return;
     }
 
-    /** 새벽 5시 체크 */
-    const resetTime = setSeconds(setMinutes(setHours(currentTime, 5), 0), 0);
+    if (timetableStatus === TimetableStoreStatus.NOT_INITIALIZED) {
+      return;
+    }
 
-    const isSameDays = isSameDay(resetTime, currentTime);
-    const isSameHours = isSameHour(resetTime, currentTime);
-    const isSameMinutes = isSameMinute(resetTime, currentTime);
-
-    const isSameTime = isSameDays && isSameMinutes && isSameHours;
-
-    if (isSameDays && isSameTime) {
-      resetDuration();
-      return setPeriods(
-        periods.map((period) => ({
-          ...period,
-          startTime: addDays(period.startTime, 1),
-        }))
-      );
+    if (periodsStatus === PeriodStatus.NOT_PERIODS_SET) {
+      return;
     }
 
     const result = getCurrentPeriod(periods, currentTime);
@@ -71,9 +76,10 @@ export const PeriodHandler = ({ initialPeriods }: { initialPeriods: Period[] }) 
   return <></>;
 };
 
-const getCurrentPeriod = (priods: Period[], currentTime: Date) => {
+// 현재 교시에 대한 정보 반환
+const getCurrentPeriod = (periods: Period[], currentTime: Date) => {
   // (1) 시간표 시작 전인지 확인
-  const firstPeriod = priods[0];
+  const firstPeriod = periods[0];
   const isBeforeFirstPeriod = currentTime.getTime() < firstPeriod.startTime.getTime();
 
   if (isBeforeFirstPeriod) {
@@ -81,7 +87,7 @@ const getCurrentPeriod = (priods: Period[], currentTime: Date) => {
   }
 
   // (2) 시간표 종료 후인지 확인
-  const lastPeriod = priods.at(-1)!;
+  const lastPeriod = periods.at(-1)!;
   const isAfterLastPeriod = currentTime.getTime() > addMinutes(lastPeriod.startTime, lastPeriod.duration - 1).getTime();
 
   if (isAfterLastPeriod) {
@@ -89,7 +95,7 @@ const getCurrentPeriod = (priods: Period[], currentTime: Date) => {
   }
 
   // (3) 시간표 시간 확인
-  const matchPeriod = priods
+  const matchPeriod = periods
     .filter((period) => {
       const isOverStartTime = period.startTime.getTime() <= currentTime.getTime();
       const isUnderEndTime = currentTime.getTime() < addMinutes(period.startTime, period.duration).getTime();

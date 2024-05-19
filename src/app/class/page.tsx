@@ -108,7 +108,7 @@ const ManageBadge = () => {
 const CreateNewClassButton = () => {
   return (
     <a
-      href="/class/create/step/required"
+      href="/class/create"
       className="flex flex-row justify-center items-center gap-1 rounded-full border border-green-600 border-dashed py-3 text-green-600">
       <CirclePlus className="size-4" />
       새로운 반을 만드시겠어요?

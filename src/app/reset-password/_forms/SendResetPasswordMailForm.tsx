@@ -3,10 +3,9 @@
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ActionStatus } from '@/enums/ActionStatus';
-import { FormState } from '@/types/actions';
+import { ErrorObject } from '@/types/api';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PropsWithChildren, useRef, useState, useTransition } from 'react';
+import { PropsWithChildren, useState } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { sendResetPasswordMail } from './SendResetPasswordMailForm.action';
@@ -26,59 +25,48 @@ type SendResetPasswordMailFormProps = {
 };
 
 export default function SendResetPasswordMailForm({ onSuccess }: SendResetPasswordMailFormProps) {
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
+  const [errorState, setErrorState] = useState<ErrorObject | null>(null);
 
-  const [state, setState] = useState<FormState>({
-    status: ActionStatus.Idle,
-    fields: { ...initialValues },
-  });
+  const startPending = () => setIsPending(true);
+  const releasePending = () => setIsPending(false);
+  const resetErrorState = () => setErrorState(null);
 
   const form = useForm<SendResetPasswordMailRequest>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...state.fields },
+    defaultValues: { ...initialValues },
   });
 
-  const formRef = useRef<HTMLFormElement>(null);
-
   const submitText = isPending ? '메일 보내는 중...' : '비밀번호 재설정 메일 보내기';
-  const hasError = state.status === ActionStatus.Error;
+  const hasError = errorState !== null;
 
-  const handleSubmitAfterValidation = () => {
-    if (formRef.current === null) {
-      throw new Error('formRef가 없음');
-    }
-
-    const formData = new FormData(formRef.current);
-
-    setState({
-      status: ActionStatus.Idle,
-      fields: { ...(Object.fromEntries(formData) as Record<string, string>) },
-    });
-
-    startTransition(() => {
-      requestSendMail(formData);
-    });
+  const handleSubmitAfterValidation = (data: SendResetPasswordMailRequest) => {
+    requestSendMail(data);
   };
 
-  const requestSendMail = async (formData: FormData) => {
-    const result = await sendResetPasswordMail(state, formData);
+  const requestSendMail = async (data: SendResetPasswordMailRequest) => {
+    startPending();
+    resetErrorState();
 
-    if (result.status === ActionStatus.Success) {
-      return onSuccess(result.fields?.email);
-    } else {
-      setState(result);
+    const { status, payload } = await sendResetPasswordMail(data);
+
+    if (status === 200) {
+      return onSuccess(data.email);
     }
+
+    releasePending();
+    setErrorState(payload);
   };
 
   return (
     <Form {...form}>
-      <form ref={formRef} onSubmit={form.handleSubmit(handleSubmitAfterValidation)} className="w-full flex-1 flex">
+      <form onSubmit={form.handleSubmit(handleSubmitAfterValidation)} className="w-full flex-1 flex">
         <fieldset className="flex-1 flex flex-col border-none space-y-2 md:space-y-6" disabled={isPending}>
           <EmailField control={form.control} />
           <SubmitButton>{submitText}</SubmitButton>
         </fieldset>
 
-        {hasError && <p>{state.issues[0]}</p>}
+        {hasError && <p>{errorState.errorMessage}</p>}
       </form>
     </Form>
   );
@@ -93,7 +81,7 @@ const EmailField = ({ control }: { control: Control<SendResetPasswordMailRequest
         <FormItem>
           <FormLabel>이메일</FormLabel>
           <FormControl>
-            <Input placeholder="example@example.com" type="email" {...field} />
+            <Input placeholder="example@example.com" type="email" {...field} iconType="email" />
           </FormControl>
           <FormDescription>가입했을 당시의 이메일을 입력해주세요.</FormDescription>
           <FormMessage />

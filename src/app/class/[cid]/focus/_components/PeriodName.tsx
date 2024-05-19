@@ -1,9 +1,13 @@
 'use client';
 
-import { Period, PeriodStatus, usePeriods } from '../../_store/usePeriods';
+import { Period, PeriodStatus, usePeriods } from '../../_store/PeriodsStore';
 
 export const PeriodName = () => {
   const { status: periodStatus, currentPeriod } = usePeriods();
+
+  if (periodStatus === PeriodStatus.NOT_PERIODS_SET) {
+    return 'Loading ...';
+  }
 
   const periodNameLabel = getPeriodNameLabel(periodStatus, currentPeriod);
   const durationLabel = getDurationLavel(periodStatus, currentPeriod);

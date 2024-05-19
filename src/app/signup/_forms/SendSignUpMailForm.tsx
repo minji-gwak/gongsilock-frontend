@@ -3,13 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ActionStatus } from '@/enums/ActionStatus';
-import { FormState } from '@/types/actions';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PropsWithChildren, useRef, useState, useTransition } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { sendSignUpMail } from './SendSignUpMailForm.action';
+import { ErrorObject } from '@/types/api';
 
 const formSchema = z.object({
   email: z.string().email('이메일 형식을 따라주셈'),
@@ -26,55 +25,43 @@ type SendSignUpMailFormProp = {
 };
 
 export function SendSignUpMailForm({ onSuccess }: SendSignUpMailFormProp) {
-  const [isPending, startTransition] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
+  // Pending 및 Error State
+  const [isPending, setIsPending] = useState(false);
+  const [errorState, setErrorState] = useState<ErrorObject | null>(null);
 
-  const [state, setState] = useState<FormState>({
-    status: ActionStatus.Idle,
-    fields: { ...initialValues },
-  });
-
+  // Client Validation
   const form = useForm<SendSignUpMailRequest>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...state.fields },
+    defaultValues: { ...initialValues },
   });
 
   const submitText = isPending ? '전송 중...' : '회원가입 메일 보내기';
-  const hasError = state.status === ActionStatus.Error;
+  const hasError = errorState !== null;
 
-  const handleSubmitAfterValidation = () => {
-    if (formRef.current === null) {
-      throw new Error('formRef가 없음');
-    }
-
-    const formData = new FormData(formRef.current);
-
-    setState({
-      status: ActionStatus.Idle,
-      fields: { ...(Object.fromEntries(formData) as Record<string, string>) },
-    } as FormState);
-
-    startTransition(() => {
-      requestSendSignUpMail(formData);
-    });
+  const handleSubmitAfterValidation = (data: SendSignUpMailRequest) => {
+    requestSendSignUpMail(data);
   };
 
-  const requestSendSignUpMail = async (formData: FormData) => {
-    const result = await sendSignUpMail(state, formData);
+  const requestSendSignUpMail = async (data: SendSignUpMailRequest) => {
+    setIsPending(true);
+    setErrorState(null);
 
-    if (result.status === ActionStatus.Success) {
-      return onSuccess(result.fields?.email);
-    } else {
-      setState(result);
+    const { status, payload } = await sendSignUpMail(data);
+
+    if (status === 200) {
+      return onSuccess(data.email);
     }
+
+    setErrorState(payload);
+    setIsPending(false);
   };
 
   return (
     <Form {...form}>
-      <form className="w-full flex-1 flex" ref={formRef} onSubmit={form.handleSubmit(handleSubmitAfterValidation)}>
+      <form className="w-full flex-1 flex" onSubmit={form.handleSubmit(handleSubmitAfterValidation)}>
         <fieldset className="flex-1 flex flex-col border-none space-y-2 md:space-y-6" disabled={isPending}>
           <EmailField control={form.control} />
-          {hasError && <p>{state.issues[0]}</p>}
+          {hasError && <p>{errorState.errorMessage}</p>}
           <SubmitButton>{submitText}</SubmitButton>
         </fieldset>
       </form>
@@ -91,7 +78,7 @@ const EmailField = ({ control }: { control: Control<SendSignUpMailRequest, any> 
         <FormItem>
           <FormLabel>이메일</FormLabel>
           <FormControl>
-            <Input placeholder="example@example.com" type="email" {...field} />
+            <Input placeholder="example@example.com" type="email" {...field} iconType="email" />
           </FormControl>
           <FormMessage />
         </FormItem>

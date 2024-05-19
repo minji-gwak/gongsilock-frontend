@@ -3,13 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ActionStatus } from '@/enums/ActionStatus';
-import { FormState } from '@/types/actions';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PropsWithChildren, useRef, useState, useTransition } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { signUpWithEmail } from './SignUpForm.action';
+import { ErrorObject } from '@/types/api';
 
 /**
  * NOTE: RSC에서 RCC로 넘길 수 있는 건 plain object라서 file이 지금 안 넘어가는 것 같은데.. 확인해봐야 할 것 같음.
@@ -19,93 +18,163 @@ import { signUpWithEmail } from './SignUpForm.action';
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 3; // 3MB
 const ACCEPTED_FILE_TYPES = ['image/png'];
 
-const formSchema = z.object({
-  username: z.string().min(2, {
-    message: '이름은 최소 2글자 이상',
-  }),
-  // profileImage: z
-  //   .instanceof(File)
-  //   .optional()
-  //   .refine((file) => {
-  //     return !file || file.size <= MAX_UPLOAD_SIZE;
-  //   }, 'File size must be less than 3MB')
-  //   .refine((file) => {
-  //     return !file || ACCEPTED_FILE_TYPES.includes(file.type);
-  //   }, 'File must be a PNG'),
-});
+const formSchema = z
+  .object({
+    email: z.string(),
+    password: z
+      .string()
+      .min(2, {
+        message: '비밀번호는 최소 2글자 이상이어야 해요.',
+      })
+      .max(15, {
+        message: '비밀번호는 최대 15글자 이하여야 해요.',
+      }),
+    passwordConfirm: z.string(),
+    username: z.string().min(2, {
+      message: '이름은 최소 2글자 이상',
+    }),
+    // profileImage: z
+    //   .instanceof(File)
+    //   .optional()
+    //   .refine((file) => {
+    //     return !file || file.size <= MAX_UPLOAD_SIZE;
+    //   }, 'File size must be less than 3MB')
+    //   .refine((file) => {
+    //     return !file || ACCEPTED_FILE_TYPES.includes(file.type);
+    //   }, 'File must be a PNG'),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: '비밀번호를 다시 확인해주세요.',
+    path: ['passwordConfirm'],
+  });
 
 export type SignUpRequest = z.infer<typeof formSchema>;
 
 const initialValues: SignUpRequest = {
+  email: '',
+  password: '',
+  passwordConfirm: '',
   username: '',
   // profileImage: undefined,
 };
 
 type SignUpFormProp = {
+  defaultValues: { email: string };
   onSuccess: () => void;
 };
 
-export function SignUpForm({ onSuccess }: SignUpFormProp) {
-  const [isPending, startTransition] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
+export function SignUpForm({ onSuccess, defaultValues }: SignUpFormProp) {
+  // Pending 및 Error State
+  const [isPending, setIsPending] = useState(false);
+  const [errorState, setErrorState] = useState<ErrorObject | null>(null);
 
-  const [state, setState] = useState<FormState>({
-    status: ActionStatus.Idle,
-    fields: { ...initialValues },
-  });
+  const startPending = () => setIsPending(true);
+  const releasePending = () => setIsPending(false);
+  const resetErrorState = () => setErrorState(null);
 
+  // Client Validation
   const form = useForm<SignUpRequest>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...state.fields },
+    defaultValues: { ...initialValues },
   });
 
   const submitText = isPending ? '회원가입 중...' : '회원가입 하기';
-  const hasError = state.status === ActionStatus.Error;
+  const hasError = errorState !== null;
 
-  const handleSubmitAfterValidation = () => {
-    if (formRef.current === null) {
-      throw new Error('formRef가 없음');
-    }
-
-    const formData = new FormData(formRef.current);
-
-    setState({
-      status: ActionStatus.Idle,
-      fields: { ...(Object.fromEntries(formData) as Record<string, string>) },
-    } as FormState);
-
-    startTransition(() => {
-      requestSignUp(formData);
-    });
+  const handleSubmitAfterValidation = (data: SignUpRequest) => {
+    requestSignUp(data);
   };
 
-  const requestSignUp = async (formData: FormData) => {
-    const result = await signUpWithEmail(state, formData);
+  const requestSignUp = async (data: SignUpRequest) => {
+    startPending();
+    resetErrorState();
 
-    if (result.status === ActionStatus.Success) {
+    const { status, payload } = await signUpWithEmail(data);
+
+    if (status === 200) {
       return onSuccess();
-    } else {
-      setState(result);
     }
+
+    releasePending();
+    setErrorState(payload);
   };
 
   return (
     <Form {...form}>
       <form
-        ref={formRef}
         onSubmit={form.handleSubmit(handleSubmitAfterValidation)}
         className="w-full flex-1 flex"
         encType="multipart/form-data">
         <fieldset className="flex-1 flex flex-col border-none space-y-6" disabled={isPending}>
+          <EmailField control={form.control} />
+          <PasswordField control={form.control} />
+          <PasswordConfirmField control={form.control} />
           <UsernameField control={form.control} />
           {/* <ProfileField control={form.control} /> */}
-          {hasError && <p>{state.issues[0]}</p>}
+          {hasError && <p>{errorState.errorMessage}</p>}
           <SubmitButton>{submitText}</SubmitButton>
         </fieldset>
       </form>
     </Form>
   );
 }
+
+const EmailField = ({ control }: { control: Control<SignUpRequest, any> }) => {
+  return (
+    <FormField
+      control={control}
+      name="email"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>이메일*</FormLabel>
+          <FormDescription>해당 이메일로 가입될 예정입니다.</FormDescription>
+          <FormControl>
+            <Input type="email" {...field} disabled iconType="email" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
+
+const PasswordField = ({ control }: { control: Control<SignUpRequest, any> }) => {
+  return (
+    <FormField
+      control={control}
+      name="password"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>비밀번호*</FormLabel>
+          <FormDescription>비밀번호를 입력해주세요.</FormDescription>
+          <FormControl>
+            <Input type="password" {...field} placeholder="2글자 이상, 15글지 이하, 특문포함" iconType="password" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
+
+const PasswordConfirmField = ({ control }: { control: Control<SignUpRequest, any> }) => {
+  return (
+    <FormField
+      control={control}
+      name="passwordConfirm"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>비밀번호 확인*</FormLabel>
+          <FormDescription>비밀번호를 다시 입력해주세요.</FormDescription>
+          <FormControl>
+            <Input type="password" placeholder="비밀번호 확인용" {...field} iconType="password" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
 
 const UsernameField = ({ control }: { control: Control<SignUpRequest, any> }) => {
   return (

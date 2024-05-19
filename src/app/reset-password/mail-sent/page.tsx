@@ -6,14 +6,14 @@ import fox from '@/static/images/fox.jpg';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export default function Page({ searchParams }: { searchParams?: { mail: string } }) {
-  if (searchParams === undefined) {
+export default function Page({ searchParams }: { searchParams: { mail?: string } }) {
+  const { mail } = searchParams;
+
+  if (mail === undefined) {
     notFound();
   }
 
-  const { mail } = searchParams;
-
-  console.log({ searchParams });
+  console.log({ searchParams, mail });
 
   return (
     <section className="full-container">

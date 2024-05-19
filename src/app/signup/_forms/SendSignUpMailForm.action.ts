@@ -1,14 +1,8 @@
 'use server';
 
-import { FormState } from '@/types/actions';
-import { ActionStatus } from '@/enums/ActionStatus';
+import { _withSuccess, requestEchoAPI } from '@/utils/apiHelper';
+import { SendSignUpMailRequest } from './SendSignUpMailForm';
 
-export async function sendSignUpMail(prevState: FormState, data: FormData): Promise<FormState> {
-  console.log('sendSignUpMail: ', { prevState, data: { ...(Object.fromEntries(data) as { email: string }) } });
-
-  await new Promise((resolve) => {
-    setTimeout(() => resolve(null), 1500);
-  });
-
-  return { status: ActionStatus.Success, fields: { ...(Object.fromEntries(data) as { email: string }) } };
+export async function sendSignUpMail(data: SendSignUpMailRequest) {
+  return await requestEchoAPI(_withSuccess({}));
 }
