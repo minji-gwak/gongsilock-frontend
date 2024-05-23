@@ -3,47 +3,9 @@ import { HeadingWithDescription } from '@/components/HeadingWithDescription/Head
 import { CirclePlus, CirclePlusIcon, User } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
-
-// TODO: API 명세에 맞게 types/models 생성
-type ClassItem = {
-  id: number;
-  icon: string;
-  name: string;
-  isManaged: boolean;
-  currentPeopleCount: number;
-  maxPeopleCount: number;
-};
-
-// 임시 데이터
-const classListData: ClassItem[] = [
-  {
-    id: 0,
-    icon: '😇',
-    name: '우리 열심히 공부하자',
-    isManaged: true,
-    currentPeopleCount: 2,
-    maxPeopleCount: 10,
-  },
-  {
-    id: 1,
-    icon: '🔥',
-    name: '프론트엔드 모각코',
-    isManaged: false,
-    currentPeopleCount: 5,
-    maxPeopleCount: 10,
-  },
-];
-
-// TODO: action으로 이동
-const getClassList = async (): Promise<ClassItem[]> => {
-  'use server';
-
-  return await new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(classListData);
-    }, 1500);
-  });
-};
+import { fetchMyClazzList } from '../actions';
+import { FetchStatus } from '@/types/api';
+import { ClassItem } from '@/types/clazz';
 
 export default function Page() {
   return (
@@ -63,15 +25,31 @@ export default function Page() {
   );
 }
 
-// TODO: 파일 분리
 const ClassList = async () => {
-  const classListData = await getClassList();
+  const { status, data } = await fetchMyClazzList();
+
+  if (status === FetchStatus.FAIL) {
+    throw new Error(data.errorMessage);
+  }
+
+  if (status === FetchStatus.NETWORK_ERROR) {
+    throw new Error(data.message);
+  }
+
+  if (status === FetchStatus.UNKNOWN_ERROR) {
+    throw new Error(data);
+  }
+
+  const classLists = data;
+
+  const hasNoClass = classLists.length === 0;
 
   return (
     <ul className="flex flex-col gap-3">
-      {classListData.map((classItemData) => (
-        <Link key={classItemData.id} href={`/class/${classItemData.id}/dashboard`}>
-          <ClassItemPresenter {...classItemData} />
+      {hasNoClass && <span>가입한 반이 없어용😇</span>}
+      {classLists.map((classItem) => (
+        <Link key={classItem.id} href={`/class/${classItem.id}/dashboard`}>
+          <ClassItemPresenter {...classItem} />
         </Link>
       ))}
       <CreateNewClassButton />
@@ -81,20 +59,21 @@ const ClassList = async () => {
 
 type ClassItemPresenterProp = ClassItem;
 
-const ClassItemPresenter = ({ currentPeopleCount, icon, maxPeopleCount, name, isManaged }: ClassItemPresenterProp) => {
+const ClassItemPresenter = ({ clazzIcon, clazzName, isOwnd, memberCount }: ClassItemPresenterProp) => {
   return (
     <li className="flex flex-row gap-6 px-4 py-3 border border-gray-200 rounded-full">
-      <span>{icon}</span>
+      <span>{clazzIcon}</span>
 
       <div className="flex flex-row gap-1 items-center flex-1">
-        <span>{name}</span>
-        {isManaged && <ManageBadge />}
+        <span>{clazzName}</span>
+        {isOwnd && <ManageBadge />}
       </div>
 
       <div className="flex flex-row justify-center items-center gap-1">
         <User className="size-4" />
         <span>
-          {currentPeopleCount}/{maxPeopleCount}
+          {/* {currentPeopleCount}/{maxPeopleCount} */}
+          {memberCount}
         </span>
       </div>
     </li>

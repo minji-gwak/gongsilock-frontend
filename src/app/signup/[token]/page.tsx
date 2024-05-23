@@ -1,9 +1,9 @@
+import { getVerifiedEmailFromToken } from '@/app/actions/validate.actions';
 import { SignUpForm } from '@/app/signup/_forms/SignUpForm';
 import { GongsilockLogo } from '@/components/GongsilockLogo/GongsilockLogo';
 import { HeadingWithDescription } from '@/components/HeadingWithDescription/HeadingWithDescription';
+import { FetchStatus } from '@/types/api';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { getVerifiedEmailFromToken } from '../_actions/actions';
 
 type PageProps = {
   params: { token: string };
@@ -15,21 +15,21 @@ export default async function Page({ params }: PageProps) {
     throw new Error('token이 없음');
   }
 
-  const { status, payload } = await getVerifiedEmailFromToken(token);
+  const { status, data } = await getVerifiedEmailFromToken({ token });
 
-  // TODO: 500 상태 Enum으로 작성, status 비교하는 타입 가드 함수 작성
-  if (status === 500) {
-    throw new Error(JSON.stringify(payload));
+  if (status === FetchStatus.FAIL) {
+    throw new Error(data.errorMessage);
   }
 
-  const { email: verifiedEmail } = payload;
+  if (status === FetchStatus.NETWORK_ERROR) {
+    throw new Error(data.message);
+  }
 
-  const handleSuccess = async () => {
-    'use server';
-    console.log('회원가입 성공!!~~~!');
+  if (status === FetchStatus.UNKNOWN_ERROR) {
+    throw new Error(data);
+  }
 
-    redirect('/class');
-  };
+  const { email: verifiedEmail } = data;
 
   return (
     <section className="full-container">
@@ -38,7 +38,7 @@ export default async function Page({ params }: PageProps) {
       </Link>
 
       <HeadingWithDescription heading="기본 정보 입력" description="공시락 서비스에 필요한 정보를 입력해주세요." />
-      <SignUpForm onSuccess={handleSuccess} defaultValues={{ email: verifiedEmail }} />
+      <SignUpForm redirectURL="/class" defaultValues={{ email: verifiedEmail }} token={token} />
     </section>
   );
 }

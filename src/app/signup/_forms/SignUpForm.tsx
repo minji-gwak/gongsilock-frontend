@@ -7,8 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PropsWithChildren, useRef, useState, useTransition } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { signUpWithEmail } from './SignUpForm.action';
-import { ErrorObject } from '@/types/api';
+import { ErrorObject, FetchStatus } from '@/types/api';
+import { signUpWithEmail } from '@/app/actions';
+import { useRouter } from 'next/navigation';
 
 /**
  * NOTE: RSC에서 RCC로 넘길 수 있는 건 plain object라서 file이 지금 안 넘어가는 것 같은데.. 확인해봐야 할 것 같음.
@@ -60,10 +61,13 @@ const initialValues: SignUpRequest = {
 
 type SignUpFormProp = {
   defaultValues: { email: string };
-  onSuccess: () => void;
+  redirectURL: string;
+  token: string;
 };
 
-export function SignUpForm({ onSuccess, defaultValues }: SignUpFormProp) {
+export function SignUpForm({ redirectURL, defaultValues, token }: SignUpFormProp) {
+  const router = useRouter();
+
   // Pending 및 Error State
   const [isPending, setIsPending] = useState(false);
   const [errorState, setErrorState] = useState<ErrorObject | null>(null);
@@ -75,7 +79,7 @@ export function SignUpForm({ onSuccess, defaultValues }: SignUpFormProp) {
   // Client Validation
   const form = useForm<SignUpRequest>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...initialValues },
+    defaultValues: { ...initialValues, ...defaultValues },
   });
 
   const submitText = isPending ? '회원가입 중...' : '회원가입 하기';
@@ -85,26 +89,44 @@ export function SignUpForm({ onSuccess, defaultValues }: SignUpFormProp) {
     requestSignUp(data);
   };
 
-  const requestSignUp = async (data: SignUpRequest) => {
+  const requestSignUp = async (signUpData: SignUpRequest) => {
     startPending();
     resetErrorState();
 
-    const { status, payload } = await signUpWithEmail(data);
+    const { status, data } = await signUpWithEmail({
+      email: signUpData.email,
+      password: signUpData.password,
+      nickname: signUpData.username,
+      link: token,
+      profileImg: 'https://example.com/image.png',
+    });
 
-    if (status === 200) {
-      return onSuccess();
+    if (status === FetchStatus.FAIL) {
+      setErrorState(data);
+      releasePending();
+      return;
     }
 
-    releasePending();
-    setErrorState(payload);
+    if (status === FetchStatus.NETWORK_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[NETWORK_ERROR]: requestSignUp, ', data.message);
+      releasePending();
+      return;
+    }
+
+    if (status === FetchStatus.UNKNOWN_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[UNKNOWN_ERROR]: requestSignUp, ', data);
+      releasePending();
+      return;
+    }
+
+    router.push(redirectURL);
   };
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleSubmitAfterValidation)}
-        className="w-full flex-1 flex"
-        encType="multipart/form-data">
+      <form onSubmit={form.handleSubmit(handleSubmitAfterValidation)} className="w-full flex-1 flex" encType="multipart/form-data">
         <fieldset className="flex-1 flex flex-col border-none space-y-6" disabled={isPending}>
           <EmailField control={form.control} />
           <PasswordField control={form.control} />

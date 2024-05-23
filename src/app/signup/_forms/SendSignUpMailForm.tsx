@@ -7,8 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PropsWithChildren, useRef, useState, useTransition } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { sendSignUpMail } from './SendSignUpMailForm.action';
-import { ErrorObject } from '@/types/api';
+import { ErrorObject, FetchStatus } from '@/types/api';
+import { useRouter } from 'next/navigation';
+import { sendSignUpMail } from '@/app/actions';
 
 const formSchema = z.object({
   email: z.string().email('이메일 형식을 따라주셈'),
@@ -20,14 +21,17 @@ const initialValues: SendSignUpMailRequest = {
   email: '',
 };
 
-type SendSignUpMailFormProp = {
-  onSuccess: (email: string) => void;
-};
+export function SendSignUpMailForm() {
+  const router = useRouter();
 
-export function SendSignUpMailForm({ onSuccess }: SendSignUpMailFormProp) {
-  // Pending 및 Error State
+  // 폼 제출 Pending
   const [isPending, setIsPending] = useState(false);
+  const startPending = () => setIsPending(true);
+  const releasePending = () => setIsPending(false);
+
+  // Server Validation 관련
   const [errorState, setErrorState] = useState<ErrorObject | null>(null);
+  const resetErrorState = () => setErrorState(null);
 
   // Client Validation
   const form = useForm<SendSignUpMailRequest>({
@@ -42,18 +46,35 @@ export function SendSignUpMailForm({ onSuccess }: SendSignUpMailFormProp) {
     requestSendSignUpMail(data);
   };
 
-  const requestSendSignUpMail = async (data: SendSignUpMailRequest) => {
-    setIsPending(true);
-    setErrorState(null);
+  const requestSendSignUpMail = async (formdata: SendSignUpMailRequest) => {
+    startPending();
+    resetErrorState();
 
-    const { status, payload } = await sendSignUpMail(data);
+    const { status, data } = await sendSignUpMail(formdata);
 
-    if (status === 200) {
-      return onSuccess(data.email);
+    if (status === FetchStatus.SUCCESS) {
+      router.push(`/signup/mail-sent?mail=${formdata.email}`);
     }
 
-    setErrorState(payload);
-    setIsPending(false);
+    if (status === FetchStatus.FAIL) {
+      setErrorState(data);
+      releasePending();
+      return;
+    }
+
+    if (status === FetchStatus.NETWORK_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[NETWORK_ERROR]: requestLogin, ', data);
+      releasePending();
+      return;
+    }
+
+    if (status === FetchStatus.UNKNOWN_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[UNKNWON_ERROR]: requestLogin, ', data);
+      releasePending();
+      return;
+    }
   };
 
   return (

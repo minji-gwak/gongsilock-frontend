@@ -1,8 +1,8 @@
+import { getVerifiedEmailFromToken } from '@/app/actions/validate.actions';
 import { GongsilockLogo } from '@/components/GongsilockLogo/GongsilockLogo';
 import { HeadingWithDescription } from '@/components/HeadingWithDescription/HeadingWithDescription';
+import { FetchStatus } from '@/types/api';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { getVerifiedEmailFromToken } from '../_actions/actions';
 import ResetPasswordForm from '../_forms/ResetPasswordForm';
 
 type PageProps = {
@@ -17,22 +17,21 @@ export default async function Page({ params }: PageProps) {
     throw new Error('token이 없음');
   }
 
-  const { status, payload } = await getVerifiedEmailFromToken(token);
+  const { status, data } = await getVerifiedEmailFromToken({ token });
 
-  // TODO: 500 상태 Enum으로 작성, status 비교하는 타입 가드 함수 작성
-  if (status === 500) {
-    throw new Error(JSON.stringify(payload));
+  if (status === FetchStatus.FAIL) {
+    throw new Error(data.errorMessage);
   }
 
-  const { email: verifiedEmail } = payload;
+  if (status === FetchStatus.NETWORK_ERROR) {
+    throw new Error(data.message);
+  }
 
-  const handleSuccess = async () => {
-    'use server';
+  if (status === FetchStatus.UNKNOWN_ERROR) {
+    throw new Error(data);
+  }
 
-    console.log('어 그래 성공~');
-
-    redirect(`/reset-password/complete`);
-  };
+  const { email: verifiedEmail } = data;
 
   return (
     <section className="full-container">
@@ -42,7 +41,7 @@ export default async function Page({ params }: PageProps) {
 
       <HeadingWithDescription heading="비밀번호 재설정" description="변경할 비밀번호를 입력해주세요." />
 
-      <ResetPasswordForm onSuccess={handleSuccess} defaultValues={{ email: verifiedEmail }} />
+      <ResetPasswordForm redirectURL="/reset-password/complete" defaultValues={{ email: verifiedEmail }} />
     </section>
   );
 }

@@ -11,8 +11,9 @@ import { RequiredForm } from './_forms/RequiredForm';
 import { TemplateForm } from './_forms/TemplateForm';
 import { TimetableDetailForm } from './_forms/TimetableDetailForm';
 import { TimetableForm } from './_forms/TimetableForm';
-import { createClazzWithTimetable } from './_actions/actions';
 import { useRouter } from 'next/navigation';
+import { CreateClazzWithTimetableRequest, createClazzWithTimetable } from '@/app/actions';
+import { FetchStatus } from '@/types/api';
 // import { useRouter } from 'next/router';
 
 // TODO: 배포 후에 초기 로딩 시간 측정해보고 좀 많이 크면 Code Spliting 해보기
@@ -148,13 +149,42 @@ export default function Page() {
   const handleNext = async ({ data, nextStep }: { data: Partial<CreateFormSchema>; nextStep: CreateStep }) => {
     if (nextStep === CreateStep.SUBMIT) {
       const submitData = { ...formDataForSubmit, ...data } as CreateFormSchema;
-      const { status, payload } = await createClazzWithTimetable(submitData);
 
-      if (status === 200) {
-        router.push(`/class/create/complete?clazzId=${payload.clazzId}`);
-      } else {
-        throw new Error('반 생성 실패 ㅠ');
+      const requestData: CreateClazzWithTimetableRequest = {
+        clazzName: submitData.name,
+        clazzDescription: submitData.description,
+        clazzIcon: submitData.emoji,
+        timetableRequest: {
+          timetableName: submitData.timetableName,
+          timetableDays: submitData.dayOfWeeks,
+          periodRequests: submitData.periods.map((period) => ({
+            periodName: period.name,
+            periodDuration: period.duration,
+            periodStartTime: period.startTime,
+            isAttendanceRequired: period.isAttendanceRequired === AttendanceType.YES ? true : false,
+          })),
+        },
+      };
+
+      const { status, data: response } = await createClazzWithTimetable(requestData);
+
+      // TODO: error handling
+      if (status === FetchStatus.FAIL) {
+        console.error(response.errorMessage);
+        return;
       }
+
+      if (status === FetchStatus.NETWORK_ERROR) {
+        console.error('[NETWORK_ERROR]: handleNext, ', response.message);
+        return;
+      }
+
+      if (status === FetchStatus.UNKNOWN_ERROR) {
+        console.error('[UNKNOWN_ERROR]: handleNext, ', response);
+        return;
+      }
+
+      router.push(`/class/create/complete?clazzId=${response.clazzLink}`);
 
       return;
     }
@@ -186,30 +216,10 @@ export default function Page() {
       <section className="flex flex-col flex-1 space-y-6">
         <HeadingWithDescription heading={currentStepInfo.title} description={currentStepInfo.description} />
 
-        {isRequiredStep && (
-          <RequiredForm
-            defaultValues={formDataForSubmit}
-            onSuccess={(data) => handleNext({ data, nextStep: CreateStep.TEMPLATE })}
-          />
-        )}
-        {isTemplateStep && (
-          <TemplateForm
-            defaultValues={formDataForSubmit}
-            onSuccess={(data) => handleNext({ data, nextStep: CreateStep.TIMETABLE })}
-          />
-        )}
-        {isTimetableStep && (
-          <TimetableForm
-            defaultValues={formDataForSubmit}
-            onSuccess={(data) => handleNext({ data, nextStep: CreateStep.TIMTETABLE_DETAIL })}
-          />
-        )}
-        {isTimetableDetailStep && (
-          <TimetableDetailForm
-            defaultValues={formDataForSubmit}
-            onSuccess={(data) => handleNext({ data, nextStep: CreateStep.SUBMIT })}
-          />
-        )}
+        {isRequiredStep && <RequiredForm defaultValues={formDataForSubmit} onSuccess={(data) => handleNext({ data, nextStep: CreateStep.TEMPLATE })} />}
+        {isTemplateStep && <TemplateForm defaultValues={formDataForSubmit} onSuccess={(data) => handleNext({ data, nextStep: CreateStep.TIMETABLE })} />}
+        {isTimetableStep && <TimetableForm defaultValues={formDataForSubmit} onSuccess={(data) => handleNext({ data, nextStep: CreateStep.TIMTETABLE_DETAIL })} />}
+        {isTimetableDetailStep && <TimetableDetailForm defaultValues={formDataForSubmit} onSuccess={(data) => handleNext({ data, nextStep: CreateStep.SUBMIT })} />}
       </section>
     </section>
   );
@@ -236,14 +246,11 @@ const Step = ({ step, title, isCurrentStep, isDoneStep, onClick, isClickable }: 
       })}
       onClick={() => isClickable && onClick()}>
       <span
-        className={cn(
-          'size-12 rounded-full border grid place-items-center text-[1.125rem] font-semibold transition-colors',
-          {
-            ['border-green-600 text-green-900 bg-green-50']: isCurrentStep,
-            ['border-green-400 text-white bg-green-400']: isDoneStep,
-            ['border-green-300 text-gray-500 bg-white']: isYetStep,
-          }
-        )}>
+        className={cn('size-12 rounded-full border grid place-items-center text-[1.125rem] font-semibold transition-colors', {
+          ['border-green-600 text-green-900 bg-green-50']: isCurrentStep,
+          ['border-green-400 text-white bg-green-400']: isDoneStep,
+          ['border-green-300 text-gray-500 bg-white']: isYetStep,
+        })}>
         {!shouldShowDoneIcon && step}
         {shouldShowDoneIcon && <Check className="size-[1.125rem]" />}
       </span>

@@ -3,12 +3,13 @@
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ErrorObject } from '@/types/api';
+import { ErrorObject, FetchStatus } from '@/types/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PropsWithChildren, useState } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { sendResetPasswordMail } from './SendResetPasswordMailForm.action';
+import { useRouter } from 'next/navigation';
+import { sendResetPasswordMail } from '@/app/actions';
 
 const formSchema = z.object({
   email: z.string().email('이메일 형식을 따라주셈'),
@@ -20,11 +21,9 @@ const initialValues: SendResetPasswordMailRequest = {
   email: '',
 };
 
-type SendResetPasswordMailFormProps = {
-  onSuccess: (email: string) => void;
-};
+export default function SendResetPasswordMailForm() {
+  const router = useRouter();
 
-export default function SendResetPasswordMailForm({ onSuccess }: SendResetPasswordMailFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [errorState, setErrorState] = useState<ErrorObject | null>(null);
 
@@ -44,18 +43,33 @@ export default function SendResetPasswordMailForm({ onSuccess }: SendResetPasswo
     requestSendMail(data);
   };
 
-  const requestSendMail = async (data: SendResetPasswordMailRequest) => {
+  const requestSendMail = async (mailData: SendResetPasswordMailRequest) => {
     startPending();
     resetErrorState();
 
-    const { status, payload } = await sendResetPasswordMail(data);
+    const { status, data } = await sendResetPasswordMail(mailData);
 
-    if (status === 200) {
-      return onSuccess(data.email);
+    if (status === FetchStatus.FAIL) {
+      setErrorState(data);
+      releasePending();
+      return;
     }
 
-    releasePending();
-    setErrorState(payload);
+    if (status === FetchStatus.NETWORK_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[NETWORK_ERROR]: requestSendMail, ', data);
+      releasePending();
+      return;
+    }
+
+    if (status === FetchStatus.UNKNOWN_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[UNKNOWN_ERROR]: requestSendMail, ', data);
+      releasePending();
+      return;
+    }
+
+    router.push(`/reset-password/mail-sent?mail=${mailData.email}`);
   };
 
   return (

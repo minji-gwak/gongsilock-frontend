@@ -1,14 +1,16 @@
 'use client';
 
+import { loginService } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ErrorObject } from '@/types/api';
+import { ErrorObject, FetchStatus } from '@/types/api';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { loginService } from './LoginForm.action';
+// import { loginService } from './LoginForm.action';
 
 const formSchema = z.object({
   email: z.string().email('이메일 형식을 따라주셈'),
@@ -30,15 +32,20 @@ const initialValues: LoginRequest = {
 };
 
 type LoginFormProps = {
-  onSuccess: () => Promise<void>;
+  redirectUrl: string;
 };
 
-export const LoginForm = ({ onSuccess }: LoginFormProps) => {
+export const LoginForm = ({ redirectUrl }: LoginFormProps) => {
+  const router = useRouter();
+
   // 폼 제출 Pending
   const [isPending, setIsPending] = useState(false);
+  const startPending = () => setIsPending(true);
+  const releasePending = () => setIsPending(false);
 
   // Server Validation 관련
   const [errorState, setErrorState] = useState<ErrorObject | null>(null);
+  const resetErrorState = () => setErrorState(null);
 
   // Client Validation 관련
   const form = useForm<LoginRequest>({
@@ -54,17 +61,34 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   };
 
   const requestLogin = async (loginValues: LoginRequest) => {
-    setErrorState(null);
-    setIsPending(true);
+    startPending();
+    resetErrorState();
 
-    const { status, payload } = await loginService(loginValues);
+    const { status, data } = await loginService(loginValues);
 
-    if (status === 500) {
-      setErrorState(payload);
-      setIsPending(false);
+    if (status === FetchStatus.SUCCESS) {
+      router.push(redirectUrl);
     }
 
-    return onSuccess();
+    if (status === FetchStatus.FAIL) {
+      setErrorState(data);
+      releasePending();
+      return;
+    }
+
+    if (status === FetchStatus.NETWORK_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[NETWORK_ERROR]: requestLogin, ', data);
+      releasePending();
+      return;
+    }
+
+    if (status === FetchStatus.UNKNOWN_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[UNKNWON_ERROR]: requestLogin, ', data);
+      releasePending();
+      return;
+    }
   };
 
   return (
@@ -74,9 +98,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           <EmailField control={form.control} />
           <PasswordField control={form.control} />
 
-          <Button
-            className="w-full rounded-full py-4 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-            type="submit">
+          <Button className="w-full rounded-full py-4 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2" type="submit">
             {submitText}
           </Button>
         </fieldset>

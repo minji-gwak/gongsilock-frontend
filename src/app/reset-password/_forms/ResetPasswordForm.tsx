@@ -3,12 +3,13 @@
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ErrorObject } from '@/types/api';
+import { ErrorObject, FetchStatus } from '@/types/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PropsWithChildren, useState } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { resetPassword } from './ResetPasswordForm.action';
+import { useRouter } from 'next/navigation';
+import { resetPassword } from '@/app/actions';
 
 const passwordRegex = new RegExp(/^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,15}$/);
 
@@ -41,15 +42,15 @@ const initialValues: ResetPasswordRequest = {
 };
 
 type ResetPasswordFormProps = {
-  onSuccess: () => void;
-  defaultValues?:
-    | {
-        email: string;
-      }
-    | {};
+  redirectURL: string;
+  defaultValues: {
+    email: string;
+  };
 };
 
-export default function ResetPasswordForm({ onSuccess, defaultValues = {} }: ResetPasswordFormProps) {
+export default function ResetPasswordForm({ redirectURL, defaultValues }: ResetPasswordFormProps) {
+  const router = useRouter();
+
   // Pending 및 Error 상태
   const [isPending, setIsPending] = useState(false);
   const [errorState, setErrorState] = useState<ErrorObject | null>(null);
@@ -70,18 +71,33 @@ export default function ResetPasswordForm({ onSuccess, defaultValues = {} }: Res
     requestResetPassword(data);
   };
 
-  const requestResetPassword = async (data: ResetPasswordRequest) => {
+  const requestResetPassword = async (passwordData: ResetPasswordRequest) => {
     startPending();
     resetErrorState();
 
-    const { status, payload } = await resetPassword(data);
+    const { status, data } = await resetPassword(passwordData);
 
-    if (status === 200) {
-      return onSuccess();
+    if (status === FetchStatus.FAIL) {
+      setErrorState(data);
+      releasePending();
+      return;
     }
 
-    releasePending();
-    setErrorState(payload);
+    if (status === FetchStatus.NETWORK_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[NETWORK_ERROR]: requestResetPassword, ', data);
+      releasePending();
+      return;
+    }
+
+    if (status === FetchStatus.UNKNOWN_ERROR) {
+      // TODO: Toast 띄우기
+      console.error('[UNKNOWN_ERROR]: requestResetPassword, ', data);
+      releasePending();
+      return;
+    }
+
+    router.push(redirectURL);
   };
 
   return (
