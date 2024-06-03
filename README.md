@@ -7,19 +7,19 @@ _**🚧 현재 서비스를 개발하고 있습니다.**_
 
 ## 목차
 
-1. [📖 프로젝트 개요 (Project Overview)](#프로젝트-개요-project-overview)
-2. [✨ 기능 (Features)](#기능-features)
-3. [🚀 시작하기 (Getting Started)](#시작하기-getting-started)
-   - [📋 필수 조건 (Prerequisites)](#필수-조건-prerequisites)
-   - [💻 설치 (Installation)](#설치-installation)
-   - [▶️ 실행 (Running the Project)](#실행-running-the-project)
-4. [📂 폴더 구조 (Folder Structure)](#폴더-구조-folder-structure)
-5. [🛠️ 사용된 기술 (Technologies Used)](#사용된-기술-technologies-used)
-6. [📜 스크립트 (Scripts)](#스크립트-scripts)
-7. [🧪 테스트 (Testing)](#테스트-testing)
-8. [🤝 기여 (Contributing)](#기여-contributing)
-9. [📄 라이센스 (License)](#라이센스-license)
-10. [📬 문의 (Contact)](#문의-contact)
+1. [📖 프로젝트 개요 (Project Overview)](-#프로젝트-개요-project-overview)
+2. [✨ 기능 (Features)](-#기능-features)
+3. [🚀 시작하기 (Getting Started)](-#시작하기-getting-started)
+   - [📋 필수 조건 (Prerequisites)](-#필수-조건-prerequisites)
+   - [💻 설치 (Installation)](-#설치-installation)
+   - [▶️ 실행 (Running the Project)](-#실행-running-the-project)
+4. [📂 폴더 구조 (Folder Structure)](-#폴더-구조-folder-structure)
+5. [🛠️ 사용된 기술 (Technologies Used)](-#사용된-기술-technologies-used)
+6. [📜 스크립트 (Scripts)](-#스크립트-scripts)
+7. [🧪 테스트 (Testing)](-#테스트-testing)
+8. [🤝 기여 (Contributing)](-#기여-contributing)
+9. [📄 라이센스 (License)](-#라이센스-license)
+10. [📬 문의 (Contact)](-#문의-contact)
 
 ## 📖 프로젝트 개요 (Project Overview)
 
